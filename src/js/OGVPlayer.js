@@ -259,6 +259,13 @@ class OGVPlayer extends OGVJSElement {
 		this._volume = 1;
 		this._playbackRate = 1;
 
+		/**
+		 * Custom callback function to be called on every decoded frame.
+		 * Default is null, can be set externally.
+		 * Callback signature: (keyframeTimestamp, timestamp, frameNumber) => void
+		 */
+		this.onFrameDecodedCallback = null;
+
 		Object.defineProperties(this, {
 			/**
 			 * HTMLMediaElement src property
@@ -1174,6 +1181,13 @@ class OGVPlayer extends OGVJSElement {
 			'cpu: ' + n(timing.cpuTime) + ' (mux: ' + n(timing.demuxerTime) + ' buf: ' + n(timing.bufferTime) + ' draw: ' + n(timing.drawingTime) + ' proxy: ' + n(timing.proxyTime) + ') ' +
 			'vid: ' + n(timing.videoTime) + ' aud: ' + n(timing.audioTime));
 		this._fireEventAsync('framecallback', timing);
+
+		if (this._videoInfo && this._videoInfo.fps > 0) {
+			let frameNumber = Math.floor(data.frameEndTimestamp * this._videoInfo.fps);
+			if (typeof this.onFrameDecodedCallback === 'function') {
+		        	this.onFrameDecodedCallback(this._codec ? this._codec.keyframeTimestamp : null, data.frameEndTimestamp, frameNumber);
+			}
+		}
 
 		if (!this._lastTimeUpdate || (newFrameTimestamp - this._lastTimeUpdate) >= this._timeUpdateInterval) {
 			this._lastTimeUpdate = newFrameTimestamp;
